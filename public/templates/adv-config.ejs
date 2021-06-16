@@ -1,0 +1,9 @@
+#define USE_HW_TIMER
+
+<% if (template.protocol === 'Deej'){ %>
+#define DEEJ
+#define BAUDRATE <%- template.deej.baud %>
+#define PUBLISHRATE <%- template.deej.publishFreq %>
+<% } %>
+
+#define UPDATEFREQ <%- template.updateFreq %>
