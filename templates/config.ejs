@@ -1,0 +1,110 @@
+<%
+function getInputName(input){
+    let result = "";
+    template.potentiometers.forEach(function(potentiometer, id){
+        if (input === potentiometer){
+            result = "P" + String(id);
+        }
+    });
+
+    template.switches.forEach(function(sw, id){
+        if (input === sw){
+            result = "S" + String(id);
+        }
+    });
+
+    template.encoders.forEach(function(encoder, id){
+        if (input === encoder){
+            result = "E" + String(id);
+        }
+    });
+
+    return result;
+}
+
+function getOutputName(output){
+    let result = ""
+    template.leds.forEach(function(led, id){
+        if (output === led){
+            result = "L" + id;
+        }
+    });
+
+    template.pwmLeds.forEach(function(led, id){
+        if (output === led){
+            result = "PWM" + id;
+        }
+    });
+
+    template.rgbLeds.forEach(function(led, id){
+        if (output === led){
+            result = "RGB" + id;
+        }
+    });
+    return result;
+}
+-%>
+void config(){
+<% template.potentiometers.forEach(function(potentiometer, id) {
+    let filter = "new NoFilter()";
+    if (potentiometer.denoise === "Low Pass") {
+        filter = "new LowPass(" + potentiometer.denoiseParam + ")";
+    } else if (potentiometer.denoise === "Averaging"){
+        filter = "new MovingAverage(" + potentiometer.denoiseParam + ")";
+    }
+-%>
+    auto <%- getInputName(potentiometer) %> = new Potentiometer(<%- potentiometer.pin %>, <%- filter %>);
+<% }); -%>
+
+<% template.switches.forEach(function(sw, id) {
+    let type = "Switch::SwitchType::Momentary";
+    // ToDo add types
+    let highState = "LOW";
+    // ToDo add high state
+
+    let filter = "0";
+    if (sw.denoise === "Debounce"){
+        filter = String(sw.denoiseParam);
+    }
+-%>
+    auto <%- getInputName(sw) %> = new Switch(<%- sw.pin %>, <%- type %>, <%- highState %>, <%- filter %>);
+<% }); -%>
+
+<% template.encoders.forEach(function (encoder, id) {
+    let stepSize = 50;
+    // ToDo add stepSize
+-%>
+    auto <%- getInputName(encoder) %> = new Encoder(<%- encoder.pin[0] %>, <%- encoder.pin[1] %>, <%- stepSize %>);
+<% });-%>
+
+<% template.leds.forEach(function(led, id){-%>
+    auto <%- getOutputName(led) %> = new Led(<%- led.pin %>);
+<% });-%>
+
+<% template.pwmLeds.forEach(function(led, id){-%>
+    auto <%- getOutputName(led) %> = new PWMLed(<%- led.pin %>);
+<% });-%>
+
+<% template.rgbLeds.forEach(function(led, id){-%>
+    auto <%- getOutputName(led) %> = new RGBLed(<%- led.pin[0] %>, <%- led.pin[1] %>, <%- led.pin[2] %>);
+<% });-%>
+
+
+<% template.controlElements.forEach(function(control, id) {
+    let param = getInputName(control.input);
+    if (control.mute != null){
+        param = param + ", " + getInputName(control.mute);
+    }
+-%>
+    auto ce<%- id%> = new ControlElement(<%- param %>);
+<%
+    control.outputs.forEach(function(output, oid) {
+-%>
+    ce<%- id%>->addOutput(<%- getOutputName(output)%>, new Indicator(true));
+<% }); -%>
+    addControlElement(ce<%- id%>);
+
+<% });%>
+
+
+}
